@@ -5,9 +5,10 @@ import type { Block, HeadingBlockData } from "@/types";
 
 interface HeadingBlockProps {
   block: Block;
+  onEnter?: () => void;
 }
 
-export default function HeadingBlock({ block }: HeadingBlockProps) {
+export default function HeadingBlock({ block, onEnter }: HeadingBlockProps) {
   const queryClient = useQueryClient();
   const data = block.data as unknown as HeadingBlockData;
   const [content, setContent] = useState(data.content || "");
@@ -44,29 +45,29 @@ export default function HeadingBlock({ block }: HeadingBlockProps) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       textareaRef.current?.blur();
+      onEnter?.();
     }
   };
 
   // Determine text size based on heading level
   const sizeClasses = {
-    1: "text-3xl font-bold mt-6 mb-2",
-    2: "text-2xl font-bold mt-5 mb-2",
-    3: "text-xl font-semibold mt-4 mb-1",
+    1: "text-3xl font-bold mt-2 mb-2",
+    2: "text-2xl font-bold mt-2 mb-2",
+    3: "text-xl font-semibold mt-2 mb-2",
   };
 
   return (
     <div className="group relative flex items-start gap-2">
       {/* Level Switcher (visible on hover) */}
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 mt-1 shrink-0 absolute -left-20">
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0 absolute right-2 top-2 z-10 bg-background/80 backdrop-blur-sm p-1 rounded-md border border-[var(--color-border)] shadow-sm">
         {[1, 2, 3].map((l) => (
           <button
             key={l}
             onClick={() => updateBlock.mutate({ level: l as 1 | 2 | 3 })}
-            className={`w-5 h-5 rounded text-xs flex items-center justify-center transition-colors ${
-              level === l 
-                ? "bg-[var(--color-bg-active)] text-[var(--color-text)]" 
-                : "text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-hover)]"
-            }`}
+            className={`w-5 h-5 rounded text-xs flex items-center justify-center transition-colors ${level === l
+              ? "bg-[var(--color-bg-active)] text-[var(--color-text)]"
+              : "text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-hover)]"
+              }`}
             title={`H${l}`}
           >
             H{l}

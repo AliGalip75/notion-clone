@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { GripVertical, Trash2 } from "lucide-react";
+import { GripVertical, Trash2, Move } from "lucide-react";
 import { pagesApi } from "@/api/pages";
-import type { Block } from "@/types";
+import type { Block, BlockType } from "@/types";
 
 import TextBlock from "../blocks/TextBlock";
 import HeadingBlock from "../blocks/HeadingBlock";
@@ -10,12 +10,18 @@ import ProgressBlock from "../blocks/ProgressBlock";
 import NumberBlock from "../blocks/NumberBlock";
 import ChartBlock from "../blocks/ChartBlock";
 import TableBlock from "../blocks/TableBlock";
+import ImageBlock from "../blocks/ImageBlock";
 
 interface BlockRendererProps {
   block: Block;
+  dragHandleProps?: {
+    attributes: Record<string, any>;
+    listeners: Record<string, any>;
+  };
+  onInsertBlockAfter?: (type: BlockType) => void;
 }
 
-export default function BlockRenderer({ block }: BlockRendererProps) {
+export default function BlockRenderer({ block, dragHandleProps, onInsertBlockAfter }: BlockRendererProps) {
   const queryClient = useQueryClient();
 
   const deleteBlock = useMutation({
@@ -27,13 +33,14 @@ export default function BlockRenderer({ block }: BlockRendererProps) {
 
   const renderComponent = () => {
     switch (block.type) {
-      case "text": return <TextBlock block={block} />;
-      case "heading": return <HeadingBlock block={block} />;
+      case "text": return <TextBlock block={block} onEnter={() => onInsertBlockAfter?.("text")} />;
+      case "heading": return <HeadingBlock block={block} onEnter={() => onInsertBlockAfter?.("text")} />;
       case "checklist": return <ChecklistBlock block={block} />;
       case "progress": return <ProgressBlock block={block} />;
       case "number": return <NumberBlock block={block} />;
       case "chart": return <ChartBlock block={block} />;
       case "table": return <TableBlock block={block} />;
+      case "image": return <ImageBlock block={block} />;
       default:
         return (
           <div className="p-3 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-md">
@@ -44,24 +51,24 @@ export default function BlockRenderer({ block }: BlockRendererProps) {
   };
 
   return (
-    <div className="group flex items-start gap-1 relative py-0.5">
+    <div className="group flex items-center gap-1 relative py-0.5">
       {/* Drag handle and actions */}
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center shrink-0 w-12 pt-2 -ml-12 absolute">
-        <button 
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-end shrink-0 w-12 -ml-12 pr-2 absolute left-0">
+        <button
           onClick={() => deleteBlock.mutate()}
-          className="p-1 rounded text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-hover)] hover:text-red-500 transition-colors cursor-pointer mr-1"
-          title="Sil"
+          className="w-6 h-6 flex items-center justify-center rounded text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-hover)] hover:text-red-500 transition-colors cursor-pointer"
         >
           <Trash2 size={14} />
         </button>
-        <button 
-          className="p-1 rounded text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-hover)] cursor-grab active:cursor-grabbing transition-colors"
-          title="Taşı (Yapım Aşamasında)"
+        <button
+          className="w-6 h-6 flex items-center justify-center rounded text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-hover)] cursor-grab active:cursor-grabbing transition-colors ms-1"
+          {...dragHandleProps?.attributes}
+          {...dragHandleProps?.listeners}
         >
-          <GripVertical size={16} />
+          <Move size={14} />
         </button>
       </div>
-      
+
       {/* Block Content */}
       <div className="flex-1 min-w-0">
         {renderComponent()}

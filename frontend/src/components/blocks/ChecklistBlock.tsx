@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { pagesApi } from "@/api/pages";
-import { Check, GripVertical, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import type { Block, ChecklistBlockData } from "@/types";
 
 interface ChecklistBlockProps {
@@ -11,7 +11,11 @@ interface ChecklistBlockProps {
 export default function ChecklistBlock({ block }: ChecklistBlockProps) {
   const queryClient = useQueryClient();
   const data = block.data as unknown as ChecklistBlockData;
-  const items = data.items || [];
+  const [localItems, setLocalItems] = useState(data.items || []);
+
+  useEffect(() => {
+    setLocalItems(data.items || []);
+  }, [data.items]);
 
   const updateBlock = useMutation({
     mutationFn: (newItems: ChecklistBlockData["items"]) =>
@@ -21,58 +25,93 @@ export default function ChecklistBlock({ block }: ChecklistBlockProps) {
     },
   });
 
-  const toggleItem = (index: number) => {
-    const newItems = [...items];
-    newItems[index].completed = !newItems[index].completed;
-    updateBlock.mutate(newItems);
+  const handleBlur = () => {
+    updateBlock.mutate(localItems);
   };
 
-  const updateItemText = (index: number, text: string) => {
-    const newItems = [...items];
-    newItems[index].text = text;
+  const toggleItem = (index: number) => {
+    const newItems = [...localItems];
+    newItems[index].completed = !newItems[index].completed;
+    setLocalItems(newItems);
     updateBlock.mutate(newItems);
   };
 
   const removeItem = (index: number) => {
-    const newItems = items.filter((_, i) => i !== index);
+    const newItems = localItems.filter((_, i) => i !== index);
+    setLocalItems(newItems);
     updateBlock.mutate(newItems);
   };
 
-  const addItem = () => {
-    updateBlock.mutate([...items, { text: "", completed: false }]);
+  const addItem = (index?: number) => {
+    const newItems = [...localItems];
+    if (typeof index === "number") {
+      newItems.splice(index + 1, 0, { text: "", completed: false });
+    } else {
+      newItems.push({ text: "", completed: false });
+    }
+    setLocalItems(newItems);
+    updateBlock.mutate(newItems);
+
+    // Focus next input
+    setTimeout(() => {
+      const targetIndex = typeof index === "number" ? index + 1 : newItems.length - 1;
+      const inputs = document.querySelectorAll(`input[data-checklist="${block.id}"]`);
+      if (inputs[targetIndex]) {
+        (inputs[targetIndex] as HTMLInputElement).focus();
+      }
+    }, 10);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addItem(index);
+    } else if (e.key === "Backspace" && localItems[index].text === "") {
+      e.preventDefault();
+      if (localItems.length > 1) {
+        removeItem(index);
+        setTimeout(() => {
+          const inputs = document.querySelectorAll(`input[data-checklist="${block.id}"]`);
+          const targetIndex = index > 0 ? index - 1 : 0;
+          if (inputs[targetIndex]) {
+            (inputs[targetIndex] as HTMLInputElement).focus();
+          }
+        }, 10);
+      }
+    }
   };
 
   return (
     <div className="py-1">
-      {items.map((item, index) => (
-        <div key={index} className="flex items-start gap-2 py-1 group">
+      {localItems.map((item, index) => (
+        <div key={index} className="flex items-center gap-2 py-1 group h-8">
           <button
             onClick={() => toggleItem(index)}
-            className={`mt-0.5 shrink-0 w-4 h-4 flex items-center justify-center rounded cursor-pointer transition-colors ${
-              item.completed
-                ? "bg-[var(--color-primary)] text-white"
-                : "border border-[var(--color-text-tertiary)] bg-transparent"
-            }`}
+            className={`mt-0.5 shrink-0 w-4 h-4 flex items-center justify-center rounded cursor-pointer transition-colors ${item.completed
+              ? "bg-blue-500 border border-blue-500 text-white"
+              : "border border-[var(--color-text-tertiary)] bg-transparent"
+              }`}
           >
             {item.completed && <Check size={12} strokeWidth={3} />}
           </button>
-          
+
           <input
             type="text"
+            data-checklist={block.id}
             value={item.text}
             onChange={(e) => {
-              const newItems = [...items];
+              const newItems = [...localItems];
               newItems[index].text = e.target.value;
-              // Local state update would be better for performance, but this works for MVP
-              // The updateItemText onBlur is a better approach to avoid too many requests
+              setLocalItems(newItems);
             }}
-            onBlur={(e) => updateItemText(index, e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={(e) => handleKeyDown(e, index)}
             placeholder="Yapılacak..."
             className={`flex-1 bg-transparent outline-none ${item.completed ? "line-through opacity-50" : ""}`}
             style={{ color: "var(--color-text)" }}
           />
 
-          <button 
+          <button
             onClick={() => removeItem(index)}
             className="opacity-0 group-hover:opacity-100 p-1 text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-hover)] rounded cursor-pointer"
           >
@@ -80,10 +119,10 @@ export default function ChecklistBlock({ block }: ChecklistBlockProps) {
           </button>
         </div>
       ))}
-      
+
       <div className="flex items-center gap-2 mt-1">
         <button
-          onClick={addItem}
+          onClick={() => addItem()}
           className="text-sm px-2 py-1 text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-hover)] rounded cursor-pointer transition-colors"
         >
           + Yeni madde

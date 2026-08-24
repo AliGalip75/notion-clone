@@ -80,7 +80,8 @@ export type BlockType =
   | "progress"
   | "number"
   | "chart"
-  | "table";
+  | "table"
+  | "image";
 
 export interface Block {
   id: number;
@@ -140,23 +141,24 @@ export interface NumberBlockData {
 
 export interface ChartDataPoint {
   label: string;
-  value: number;
+  [series: string]: number | string;
 }
 
 export interface ChartBlockData {
-  chartType: "line" | "bar" | "pie";
+  chartType: "line" | "bar" | "pie" | "donut" | "area";
   title: string;
   xAxis?: string;
   yAxis?: string;
   data: ChartDataPoint[];
 }
 
-export interface TableRow {
-  header?: string;
-  cells: string[];
+export interface TableBlockData {
+  hasColumnHeader?: boolean;
+  hasRowHeader?: boolean;
+  cells: string[][];
 }
 
-export interface TableBlockData {
-  columns: string[];
-  rows: TableRow[];
+export interface ImageBlockData {
+  url: string;
+  caption?: string;
 }

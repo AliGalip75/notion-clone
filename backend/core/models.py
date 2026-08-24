@@ -79,6 +79,7 @@ class Block(models.Model):
         NUMBER = "number", "Number"
         CHART = "chart", "Chart"
         TABLE = "table", "Table"
+        IMAGE = "image", "Image"
 
     page = models.ForeignKey(
         Page,

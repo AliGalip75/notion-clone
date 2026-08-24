@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Plus, Type, Heading, CheckSquare, ListOrdered, Percent, BarChart, Table } from "lucide-react";
+import { Plus, Type, Heading, CheckSquare, ListOrdered, Percent, BarChart, Table, Image as ImageIcon } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { pagesApi } from "@/api/pages";
 import type { BlockType } from "@/types";
@@ -16,6 +16,7 @@ const BLOCK_OPTIONS: { type: BlockType; label: string; icon: React.ReactNode }[]
   { type: "number", label: "Sayı", icon: <ListOrdered size={16} /> },
   { type: "chart", label: "Grafik", icon: <BarChart size={16} /> },
   { type: "table", label: "Tablo", icon: <Table size={16} /> },
+  { type: "image", label: "Görsel", icon: <ImageIcon size={16} /> },
 ];
 
 export default function AddBlockMenu({ pageId }: AddBlockMenuProps) {
@@ -47,6 +48,7 @@ export default function AddBlockMenu({ pageId }: AddBlockMenuProps) {
         case "number": defaultData = { title: "Sayı", value: 0, unit: "" }; break;
         case "chart": defaultData = { chartType: "bar", title: "Grafik", data: [{ label: "Öğe 1", value: 10 }] }; break;
         case "table": defaultData = { columns: ["Kolon 1", "Kolon 2"], rows: [{ cells: ["", ""] }] }; break;
+        case "image": defaultData = { url: "", caption: "" }; break;
       }
       return pagesApi.createBlock(pageId, { type, data: defaultData });
     },

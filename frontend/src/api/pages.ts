@@ -59,7 +59,19 @@ export const pagesApi = {
     return client.delete(`/core/blocks/${blockId}/`);
   },
 
-  reorderBlocks(pageId: number, order: number[]) {
-    return client.patch(`/core/pages/${pageId}/blocks/reorder/`, { order });
+  reorderContent(pageId: number, items: { type: "block" | "page"; id: number }[]) {
+    return client.patch(`/core/pages/${pageId}/reorder-content/`, { items });
+  },
+
+  // ── Upload ─────────────────────────────────
+
+  uploadFile(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    return client.post<{ url: string }>("/core/upload/", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
   },
 };

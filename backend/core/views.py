@@ -2,6 +2,8 @@ from django.db import models
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.core.files.storage import default_storage
 
 from .models import Block, Page
 from .serializers import (
@@ -123,18 +125,17 @@ class BlockDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Block.objects.filter(page__user=self.request.user)
 
 
-class BlockReorderView(APIView):
+class ContentReorderView(APIView):
     """
-    PATCH /api/pages/:pk/blocks/reorder/
+    PATCH /api/pages/:pk/reorder-content/
 
-    Accepts a list of block IDs in the desired order:
-    {"order": [5, 3, 8, 1, 2]}
+    Accepts a combined list of blocks and pages in their new order:
+    {"items": [{"type": "block", "id": 5}, {"type": "page", "id": 3}, {"type": "block", "id": 1}]}
 
     Updates position values accordingly.
     """
 
     def patch(self, request, pk):
-        # Verify page ownership
         try:
             page = Page.objects.get(pk=pk, user=request.user)
         except Page.DoesNotExist:
@@ -143,23 +144,59 @@ class BlockReorderView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        order = request.data.get("order", [])
-        if not isinstance(order, list):
+        items = request.data.get("items", [])
+        if not isinstance(items, list):
             return Response(
-                {"detail": "'order' bir liste olmalıdır."},
+                {"detail": "'items' bir liste olmalıdır."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Bulk update positions
+        # Get valid IDs for verification
         blocks = Block.objects.filter(page=page)
         block_ids = set(blocks.values_list("id", flat=True))
+        
+        child_pages = Page.objects.filter(parent=page, user=request.user)
+        page_ids = set(child_pages.values_list("id", flat=True))
 
-        for position, block_id in enumerate(order):
-            if block_id not in block_ids:
+        for position, item in enumerate(items):
+            item_type = item.get("type")
+            item_id = item.get("id")
+
+            if item_type == "block" and item_id in block_ids:
+                Block.objects.filter(id=item_id, page=page).update(position=position)
+            elif item_type == "page" and item_id in page_ids:
+                Page.objects.filter(id=item_id, parent=page).update(position=position)
+            else:
                 return Response(
-                    {"detail": f"Block {block_id} bu sayfaya ait değil."},
+                    {"detail": f"Bilinmeyen veya yetkisiz öğe: {item_type} {item_id}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            Block.objects.filter(id=block_id, page=page).update(position=position)
 
         return Response({"detail": "Sıralama güncellendi."})
+
+# ──────────────────────────────────────────────
+# File Upload View
+# ──────────────────────────────────────────────
+
+class FileUploadView(APIView):
+    """
+    POST /api/upload/ — upload a file and return its URL.
+    """
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, *args, **kwargs):
+        file_obj = request.FILES.get('file')
+        if not file_obj:
+            return Response(
+                {'detail': 'Dosya bulunamadı (file alanı eksik).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Optionally, check if the file is an image here
+        file_name = default_storage.save(file_obj.name, file_obj)
+        file_url = default_storage.url(file_name)
+        
+        return Response(
+            {'url': request.build_absolute_uri(file_url)},
+            status=status.HTTP_201_CREATED
+        )

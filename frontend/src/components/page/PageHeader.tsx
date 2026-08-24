@@ -11,7 +11,7 @@ export default function PageHeader({ page }: PageHeaderProps) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState(page.title);
   const [icon, setIcon] = useState(page.icon || "📄");
-  
+
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   // Sync state if page changes
@@ -51,14 +51,6 @@ export default function PageHeader({ page }: PageHeaderProps) {
 
   return (
     <div className="mb-8 group">
-      {/* Icon */}
-      <div className="text-6xl mb-4 relative inline-block">
-        <span className="cursor-pointer" title="İkonu Değiştir">
-          {icon}
-        </span>
-        {/* Simple icon picker (MVP version) could be implemented here */}
-      </div>
-
       {/* Title */}
       <textarea
         ref={titleRef}

@@ -3,11 +3,12 @@ from django.urls import path
 from .views import (
     BlockDetailView,
     BlockListCreateView,
-    BlockReorderView,
+    ContentReorderView,
     PageChildrenView,
     PageDetailView,
     PageListCreateView,
     PageTreeView,
+    FileUploadView,
 )
 
 urlpatterns = [
@@ -16,9 +17,12 @@ urlpatterns = [
     path("pages/tree/", PageTreeView.as_view(), name="page-tree"),
     path("pages/<int:pk>/", PageDetailView.as_view(), name="page-detail"),
     path("pages/<int:pk>/children/", PageChildrenView.as_view(), name="page-children"),
+    path("pages/<int:pk>/reorder-content/", ContentReorderView.as_view(), name="content-reorder"),
 
     # Blocks
     path("pages/<int:pk>/blocks/", BlockListCreateView.as_view(), name="block-list-create"),
-    path("pages/<int:pk>/blocks/reorder/", BlockReorderView.as_view(), name="block-reorder"),
     path("blocks/<int:pk>/", BlockDetailView.as_view(), name="block-detail"),
+
+    # Uploads
+    path("upload/", FileUploadView.as_view(), name="file-upload"),
 ]

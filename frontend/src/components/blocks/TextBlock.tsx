@@ -5,9 +5,10 @@ import type { Block, TextBlockData } from "@/types";
 
 interface TextBlockProps {
   block: Block;
+  onEnter?: () => void;
 }
 
-export default function TextBlock({ block }: TextBlockProps) {
+export default function TextBlock({ block, onEnter }: TextBlockProps) {
   const queryClient = useQueryClient();
   const data = block.data as unknown as TextBlockData;
   const [content, setContent] = useState(data.content || "");
@@ -42,6 +43,7 @@ export default function TextBlock({ block }: TextBlockProps) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       textareaRef.current?.blur();
+      onEnter?.();
     }
   };
 

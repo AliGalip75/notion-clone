@@ -75,7 +75,7 @@
   --sidebar-foreground: oklch(0.141 0.005 285.823);
   --sidebar-primary: oklch(0.21 0.006 285.885);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
+  --sidebar-accent: oklch(0.93 0 0);
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
@@ -128,10 +128,27 @@
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent: oklch(0.35 0.006 286.033);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.274 0.006 286.033);
   --sidebar-ring: oklch(0.442 0.017 285.786);
+
+  /* Legacy Mappings for Blocks */
+  --color-bg: var(--background);
+  --color-bg-secondary: var(--muted);
+  --color-bg-tertiary: var(--accent);
+  --color-bg-hover: var(--accent);
+  --color-bg-active: var(--secondary);
+  --color-surface: var(--card);
+  --color-surface-hover: var(--accent);
+
+  --color-text: var(--foreground);
+  --color-text-secondary: var(--muted-foreground);
+  --color-text-tertiary: var(--muted-foreground);
+  --color-text-inverse: var(--background);
+
+  --color-primary-light: var(--primary);
+  --color-warning: oklch(0.828 0.189 84.429);
 }
 
 @layer base {

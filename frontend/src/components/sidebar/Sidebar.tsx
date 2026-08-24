@@ -13,6 +13,10 @@ import {
   FileText,
   ChevronsUpDown,
   BookOpen,
+  MoreHorizontal,
+  Trash2,
+  Edit2,
+  Check,
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,6 +45,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 
 interface AppSidebarProps {
   selectedPageId: number | null;
@@ -52,8 +57,9 @@ export default function AppSidebar({ selectedPageId, onSelectPage }: AppSidebarP
   const { user, logout } = useAuthStore();
   const queryClient = useQueryClient();
   const { isMobile } = useSidebar();
-  
+
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const [autoRenameId, setAutoRenameId] = useState<number | null>(null);
 
   const { data: tree = [] } = useQuery({
     queryKey: ["pageTree"],
@@ -61,10 +67,11 @@ export default function AppSidebar({ selectedPageId, onSelectPage }: AppSidebarP
   });
 
   const createPage = useMutation({
-    mutationFn: () => pagesApi.create({ title: "Yeni Sayfa", icon: "📄" }),
+    mutationFn: () => pagesApi.create({ title: "Yeni Sayfa", icon: "" }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["pageTree"] });
       onSelectPage(res.data.id);
+      setAutoRenameId(res.data.id);
     },
   });
 
@@ -94,8 +101,12 @@ export default function AppSidebar({ selectedPageId, onSelectPage }: AppSidebarP
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <BookOpen className="size-4" />
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
+                <img
+                  src={isDark ? "/logo-dark.png" : "/logo-light.png"}
+                  alt="Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">Notion Clone</span>
@@ -105,11 +116,11 @@ export default function AppSidebar({ selectedPageId, onSelectPage }: AppSidebarP
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      
+
       <SidebarContent className="notion-scrollbar">
         <SidebarGroup>
           <SidebarGroupLabel>Sayfalar</SidebarGroupLabel>
-          <SidebarGroupAction title="Yeni Sayfa" onClick={() => createPage.mutate()}>
+          <SidebarGroupAction onClick={() => createPage.mutate()} className="px-3 hover:bg-black/5 hover:cursor-pointer dark:hover:bg-sidebar-accent">
             <Plus /> <span className="sr-only">Yeni Sayfa</span>
           </SidebarGroupAction>
           <SidebarGroupContent>
@@ -126,6 +137,8 @@ export default function AppSidebar({ selectedPageId, onSelectPage }: AppSidebarP
                     node={node}
                     selectedId={selectedPageId}
                     onSelect={onSelectPage}
+                    autoRenameId={autoRenameId}
+                    onSetAutoRenameId={setAutoRenameId}
                   />
                 ))}
               </SidebarMenu>
@@ -133,7 +146,7 @@ export default function AppSidebar({ selectedPageId, onSelectPage }: AppSidebarP
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
+
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -150,7 +163,7 @@ export default function AppSidebar({ selectedPageId, onSelectPage }: AppSidebarP
                     <span className="truncate font-semibold">{user?.full_name || user?.email}</span>
                     <span className="truncate text-xs">{user?.email}</span>
                   </div>
-                  <ChevronsUpDown className="ml-auto size-4" />
+                  <ChevronsUpDown className="ml-auto size-4 hover:cursor-pointer" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -176,8 +189,8 @@ export default function AppSidebar({ selectedPageId, onSelectPage }: AppSidebarP
                   {isDark ? "Açık Mod" : "Koyu Mod"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                  <LogOut className="mr-2 size-4" />
+                <DropdownMenuItem onClick={handleLogout} className="group focus:text-red-600 dark:focus:text-red-500">
+                  <LogOut className="mr-2 size-4 text-muted-foreground group-focus:text-red-600 dark:group-focus:text-red-500" />
                   Çıkış Yap
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -193,49 +206,179 @@ function TreeItem({
   node,
   selectedId,
   onSelect,
+  autoRenameId,
+  onSetAutoRenameId,
 }: {
   node: PageTreeNode;
   selectedId: number | null;
   onSelect: (id: number) => void;
+  autoRenameId: number | null;
+  onSetAutoRenameId: (id: number | null) => void;
 }) {
   const hasChildren = node.children.length > 0;
   const isSelected = selectedId === node.id;
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const [isRenaming, setIsRenaming] = useState(autoRenameId === node.id);
+
+  useEffect(() => {
+    if (autoRenameId === node.id) {
+      setIsRenaming(true);
+      onSetAutoRenameId(null);
+    }
+  }, [autoRenameId, node.id, onSetAutoRenameId]);
+
+  const [title, setTitle] = useState(node.title);
+
+  const deleteMutation = useMutation({
+    mutationFn: () => pagesApi.delete(node.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pageTree"] });
+      queryClient.invalidateQueries({ queryKey: ["page"] });
+      if (selectedId === node.id) {
+        navigate("/");
+      }
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (newTitle: string) => pagesApi.update(node.id, { title: newTitle }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pageTree"] });
+      queryClient.invalidateQueries({ queryKey: ["page"] });
+      setIsRenaming(false);
+    }
+  });
+
+  const handleRename = () => {
+    if (title.trim() && title !== node.title) {
+      updateMutation.mutate(title);
+    } else {
+      setIsRenaming(false);
+      setTitle(node.title);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.stopPropagation();
+      handleRename();
+    }
+    if (e.key === 'Escape') {
+      setIsRenaming(false);
+      setTitle(node.title);
+    }
+  };
+
+  const createSubPageMutation = useMutation({
+    mutationFn: () => pagesApi.create({ title: "Yeni Sayfa", icon: "", parent: node.id }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["pageTree"] });
+      onSelect(res.data.id);
+      onSetAutoRenameId(res.data.id);
+    },
+  });
+
+  const ActionsMenu = () => (
+    <>
+      <SidebarMenuAction
+        showOnHover={true}
+        className="right-7 bg-transparent hover:bg-sidebar-accent z-10"
+        onClick={(e) => {
+          e.stopPropagation();
+          createSubPageMutation.mutate();
+        }}
+      >
+        <Plus className="hover:bg-black/5 dark:hover:bg-white/5 hover:cursor-pointer" />
+        <span className="sr-only">Alt sayfa ekle</span>
+      </SidebarMenuAction>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          <SidebarMenuAction
+            showOnHover={true}
+            className="bg-transparent hover:bg-sidebar-accent z-10"
+          >
+            <MoreHorizontal className="hover:bg-black/5 dark:hover:bg-white/5 hover:cursor-pointer" />
+            <span className="sr-only">Daha fazla</span>
+          </SidebarMenuAction>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="start">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setIsRenaming(true); }}>
+            <Edit2 className="mr-2 size-4" />
+            Yeniden Adlandır
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(); }}
+            className="group focus:text-red-600 dark:focus:text-red-500"
+          >
+            <Trash2 className="mr-2 size-4 text-muted-foreground group-focus:text-red-600 dark:group-focus:text-red-500" />
+            Sil
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  );
+
+  const TitleContent = () => (
+    isRenaming ? (
+      <Input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onBlur={handleRename}
+        onKeyDown={handleKeyDown}
+        autoFocus
+        className="h-6 py-0 px-1 text-sm bg-background"
+        onClick={(e) => e.stopPropagation()}
+      />
+    ) : (
+      <span className="truncate">{node.title}</span>
+    )
+  );
 
   if (!hasChildren) {
     return (
-      <SidebarMenuItem>
+      <SidebarMenuItem className="relative group/item">
         <SidebarMenuButton
           isActive={isSelected}
           onClick={() => onSelect(node.id)}
           tooltip={node.title}
+          className={!isRenaming ? "group-hover/item:pr-14 transition-[padding]" : "transition-[padding]"}
         >
-          <span>{node.icon || "📄"}</span>
-          <span>{node.title}</span>
+          <span>
+            {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
+          </span>
+          <TitleContent />
         </SidebarMenuButton>
+        {!isRenaming && <ActionsMenu />}
       </SidebarMenuItem>
     );
   }
 
   return (
     <Collapsible defaultOpen={isSelected || node.children.some(c => c.id === selectedId)} className="group/collapsible">
-      <SidebarMenuItem>
+      <SidebarMenuItem className="relative group/item">
         <SidebarMenuButton
           isActive={isSelected}
           onClick={() => onSelect(node.id)}
           tooltip={node.title}
+          className={!isRenaming ? "group-hover/item:pr-14 transition-[padding]" : "transition-[padding]"}
         >
-          <span>{node.icon || "📄"}</span>
-          <span>{node.title}</span>
+          <span className="group-hover/item:opacity-0 transition-opacity">
+            {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
+          </span>
+          <TitleContent />
         </SidebarMenuButton>
         <CollapsibleTrigger asChild>
           <SidebarMenuAction
-            className="left-2 bg-transparent hover:bg-sidebar-accent data-[state=open]:rotate-90 group-data-[collapsible=icon]:hidden"
+            className="left-1 opacity-0 group-hover/item:opacity-100 transition-all data-[state=open]:rotate-90 group-data-[collapsible=icon]:hidden bg-transparent hover:bg-sidebar-accent"
             showOnHover={false}
           >
-            <ChevronRight />
+            <ChevronRight className="hover:bg-black/5 dark:hover:bg-white/5 hover:cursor-pointer" />
             <span className="sr-only">Aç/Kapat</span>
           </SidebarMenuAction>
         </CollapsibleTrigger>
+        {!isRenaming && <ActionsMenu />}
         <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
           <SidebarMenuSub>
             {node.children.map((child) => (
@@ -244,6 +387,8 @@ function TreeItem({
                 node={child}
                 selectedId={selectedId}
                 onSelect={onSelect}
+                autoRenameId={autoRenameId}
+                onSetAutoRenameId={onSetAutoRenameId}
               />
             ))}
           </SidebarMenuSub>
@@ -257,54 +402,197 @@ function TreeSubItem({
   node,
   selectedId,
   onSelect,
+  autoRenameId,
+  onSetAutoRenameId,
+  depth = 1,
 }: {
   node: PageTreeNode;
   selectedId: number | null;
   onSelect: (id: number) => void;
+  autoRenameId: number | null;
+  onSetAutoRenameId: (id: number | null) => void;
+  depth?: number;
 }) {
   const hasChildren = node.children.length > 0;
   const isSelected = selectedId === node.id;
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const [isRenaming, setIsRenaming] = useState(autoRenameId === node.id);
+
+  useEffect(() => {
+    if (autoRenameId === node.id) {
+      setIsRenaming(true);
+      onSetAutoRenameId(null);
+    }
+  }, [autoRenameId, node.id, onSetAutoRenameId]);
+
+  const [title, setTitle] = useState(node.title);
+
+  const deleteMutation = useMutation({
+    mutationFn: () => pagesApi.delete(node.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pageTree"] });
+      queryClient.invalidateQueries({ queryKey: ["page"] });
+      if (selectedId === node.id) {
+        navigate("/");
+      }
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (newTitle: string) => pagesApi.update(node.id, { title: newTitle }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pageTree"] });
+      queryClient.invalidateQueries({ queryKey: ["page"] });
+      setIsRenaming(false);
+    }
+  });
+
+  const handleRename = () => {
+    if (title.trim() && title !== node.title) {
+      updateMutation.mutate(title);
+    } else {
+      setIsRenaming(false);
+      setTitle(node.title);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.stopPropagation();
+      handleRename();
+    }
+    if (e.key === 'Escape') {
+      setIsRenaming(false);
+      setTitle(node.title);
+    }
+  };
+
+  const createSubPageMutation = useMutation({
+    mutationFn: () => pagesApi.create({ title: "Yeni Sayfa", icon: "", parent: node.id }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["pageTree"] });
+      onSelect(res.data.id);
+      onSetAutoRenameId(res.data.id);
+    },
+  });
+
+  const ActionsMenu = () => (
+    <>
+      {depth < 3 && (
+        <SidebarMenuAction
+          showOnHover={true}
+          className="right-7 bg-transparent hover:bg-sidebar-accent z-10"
+          onClick={(e) => {
+            e.stopPropagation();
+            createSubPageMutation.mutate();
+          }}
+        >
+          <Plus className="hover:bg-black/5 dark:hover:bg-white/5 hover:cursor-pointer" />
+          <span className="sr-only">Alt sayfa ekle</span>
+        </SidebarMenuAction>
+      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          <SidebarMenuAction
+            showOnHover={true}
+            className={depth < 3 ? "bg-transparent hover:bg-sidebar-accent z-10" : "right-1 bg-transparent hover:bg-sidebar-accent z-10"}
+          >
+            <MoreHorizontal className="hover:bg-black/5 dark:hover:bg-white/5 hover:cursor-pointer" />
+            <span className="sr-only">Daha fazla</span>
+          </SidebarMenuAction>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="start">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setIsRenaming(true); }}>
+            <Edit2 className="mr-2 size-4" />
+            Yeniden Adlandır
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(); }}
+            className="group focus:text-red-600 dark:focus:text-red-500"
+          >
+            <Trash2 className="mr-2 size-4 text-muted-foreground group-focus:text-red-600 dark:group-focus:text-red-500" />
+            Sil
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  );
+
+  const TitleContent = () => (
+    isRenaming ? (
+      <Input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onBlur={handleRename}
+        onKeyDown={handleKeyDown}
+        autoFocus
+        className="h-6 py-0 px-1 text-sm bg-background"
+        onClick={(e) => e.stopPropagation()}
+      />
+    ) : (
+      <span className="truncate">{node.title}</span>
+    )
+  );
 
   if (!hasChildren) {
     return (
-      <SidebarMenuSubItem>
+      <SidebarMenuSubItem className="relative group/item">
         <SidebarMenuSubButton
           isActive={isSelected}
           onClick={() => onSelect(node.id)}
+          className={!isRenaming ? "group-hover/item:pr-14 transition-[padding]" : ""}
+          title={node.title}
         >
-          <span>{node.icon || "📄"}</span>
-          <span>{node.title}</span>
+          <span>
+            {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
+          </span>
+          <TitleContent />
         </SidebarMenuSubButton>
+        {!isRenaming && <ActionsMenu />}
       </SidebarMenuSubItem>
     );
   }
 
   return (
     <Collapsible defaultOpen={isSelected || node.children.some(c => c.id === selectedId)} className="group/sub-collapsible">
-      <SidebarMenuSubItem>
+      <SidebarMenuSubItem className="relative group/item">
         <SidebarMenuSubButton
           isActive={isSelected}
           onClick={() => onSelect(node.id)}
+          className={!isRenaming ? "group-hover/item:pr-14 transition-[padding]" : ""}
+          title={node.title}
         >
-          <span>{node.icon || "📄"}</span>
-          <span>{node.title}</span>
+          <span className="group-hover/item:opacity-0 transition-opacity">
+            {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
+          </span>
+          <TitleContent />
         </SidebarMenuSubButton>
         <CollapsibleTrigger asChild>
-          <button className="absolute left-1 top-1.5 h-5 w-5 rounded-md flex items-center justify-center hover:bg-sidebar-accent text-sidebar-foreground/50 transition-transform data-[state=open]:rotate-90">
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+          <SidebarMenuAction
+            className="left-0 opacity-0 group-hover/item:opacity-100 transition-all data-[state=open]:rotate-90 group-data-[collapsible=icon]:hidden bg-transparent hover:bg-sidebar-accent"
+            showOnHover={false}
+          >
+            <ChevronRight className="hover:bg-black/5 dark:hover:bg-white/5 hover:cursor-pointer" />
+            <span className="sr-only">Aç/Kapat</span>
+          </SidebarMenuAction>
         </CollapsibleTrigger>
+        {!isRenaming && <ActionsMenu />}
         <CollapsibleContent>
-          <div className="pl-3 mt-1 border-l ml-3 border-sidebar-border">
+          <SidebarMenuSub>
             {node.children.map((child) => (
               <TreeSubItem
                 key={child.id}
                 node={child}
                 selectedId={selectedId}
                 onSelect={onSelect}
+                autoRenameId={autoRenameId}
+                onSetAutoRenameId={onSetAutoRenameId}
+                depth={depth + 1}
               />
             ))}
-          </div>
+          </SidebarMenuSub>
         </CollapsibleContent>
       </SidebarMenuSubItem>
     </Collapsible>
