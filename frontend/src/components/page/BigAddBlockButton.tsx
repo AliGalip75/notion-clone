@@ -52,11 +52,11 @@ export default function BigAddBlockButton({ onAdd }: BigAddBlockButtonProps) {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
                     <DropdownMenuSubContent>
-                      <DropdownMenuItem onClick={() => onAdd("chart", { chartType: "line", ...defaultChartData })}>Çizgi (Line)</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdd("chart", { chartType: "bar", ...defaultChartData })}>Çubuk (Bar)</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdd("chart", { chartType: "area", ...defaultChartData })}>Alan (Area)</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdd("chart", { chartType: "pie", ...defaultChartData })}>Pasta (Pie)</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdd("chart", { chartType: "donut", ...defaultChartData })}>Halka (Donut)</DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer" onClick={() => onAdd("chart", { chartType: "line", ...defaultChartData })}>Çizgi (Line)</DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer" onClick={() => onAdd("chart", { chartType: "bar", ...defaultChartData })}>Çubuk (Bar)</DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer" onClick={() => onAdd("chart", { chartType: "area", ...defaultChartData })}>Alan (Area)</DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer" onClick={() => onAdd("chart", { chartType: "pie", ...defaultChartData })}>Pasta (Pie)</DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer" onClick={() => onAdd("chart", { chartType: "donut", ...defaultChartData })}>Halka (Donut)</DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuPortal>
                 </DropdownMenuSub>

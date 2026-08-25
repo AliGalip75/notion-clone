@@ -6,12 +6,28 @@ import type { Block, ChecklistBlockData } from "@/types";
 
 interface ChecklistBlockProps {
   block: Block;
+  autoFocus?: boolean;
+  onDelete?: () => void;
 }
 
-export default function ChecklistBlock({ block }: ChecklistBlockProps) {
+export default function ChecklistBlock({ block, autoFocus, onDelete }: ChecklistBlockProps) {
   const queryClient = useQueryClient();
   const data = block.data as unknown as ChecklistBlockData;
   const [localItems, setLocalItems] = useState(data.items || []);
+
+  useEffect(() => {
+    if (autoFocus) {
+      setTimeout(() => {
+        const inputs = document.querySelectorAll(`input[data-checklist="${block.id}"]`);
+        if (inputs.length > 0) {
+          const firstInput = inputs[0] as HTMLInputElement;
+          firstInput.focus();
+          firstInput.setSelectionRange(firstInput.value.length, firstInput.value.length);
+        }
+      }, 10);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setLocalItems(data.items || []);
@@ -66,7 +82,7 @@ export default function ChecklistBlock({ block }: ChecklistBlockProps) {
     if (e.key === "Enter") {
       e.preventDefault();
       addItem(index);
-    } else if (e.key === "Backspace" && localItems[index].text === "") {
+    } else if ((e.key === "Backspace" || e.key === "Delete") && localItems[index].text === "") {
       e.preventDefault();
       if (localItems.length > 1) {
         removeItem(index);
@@ -77,6 +93,8 @@ export default function ChecklistBlock({ block }: ChecklistBlockProps) {
             (inputs[targetIndex] as HTMLInputElement).focus();
           }
         }, 10);
+      } else {
+        onDelete?.();
       }
     }
   };

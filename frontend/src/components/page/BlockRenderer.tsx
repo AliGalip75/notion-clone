@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { GripVertical, Trash2, Move } from "lucide-react";
 import { pagesApi } from "@/api/pages";
@@ -19,10 +20,21 @@ interface BlockRendererProps {
     listeners: Record<string, any>;
   };
   onInsertBlockAfter?: (type: BlockType) => void;
+  autoFocus?: boolean;
 }
 
-export default function BlockRenderer({ block, dragHandleProps, onInsertBlockAfter }: BlockRendererProps) {
+export default function BlockRenderer({ block, dragHandleProps, onInsertBlockAfter, autoFocus }: BlockRendererProps) {
   const queryClient = useQueryClient();
+  
+  // Track type changes to auto-focus when a block transforms
+  const prevTypeRef = useRef(block.type);
+  const isTypeChanged = prevTypeRef.current !== block.type;
+  
+  useEffect(() => {
+    prevTypeRef.current = block.type;
+  }, [block.type]);
+
+  const shouldFocus = autoFocus || isTypeChanged;
 
   const deleteBlock = useMutation({
     mutationFn: () => pagesApi.deleteBlock(block.id),
@@ -33,9 +45,9 @@ export default function BlockRenderer({ block, dragHandleProps, onInsertBlockAft
 
   const renderComponent = () => {
     switch (block.type) {
-      case "text": return <TextBlock block={block} onEnter={() => onInsertBlockAfter?.("text")} />;
-      case "heading": return <HeadingBlock block={block} onEnter={() => onInsertBlockAfter?.("text")} />;
-      case "checklist": return <ChecklistBlock block={block} />;
+      case "text": return <TextBlock block={block} onEnter={() => onInsertBlockAfter?.("text")} autoFocus={shouldFocus} onDelete={() => deleteBlock.mutate()} />;
+      case "heading": return <HeadingBlock block={block} onEnter={() => onInsertBlockAfter?.("text")} autoFocus={shouldFocus} onDelete={() => deleteBlock.mutate()} />;
+      case "checklist": return <ChecklistBlock block={block} autoFocus={shouldFocus} onDelete={() => deleteBlock.mutate()} />;
       case "progress": return <ProgressBlock block={block} />;
       case "number": return <NumberBlock block={block} />;
       case "chart": return <ChartBlock block={block} />;

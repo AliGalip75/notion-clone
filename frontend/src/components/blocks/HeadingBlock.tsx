@@ -6,14 +6,25 @@ import type { Block, HeadingBlockData } from "@/types";
 interface HeadingBlockProps {
   block: Block;
   onEnter?: () => void;
+  autoFocus?: boolean;
+  onDelete?: () => void;
 }
 
-export default function HeadingBlock({ block, onEnter }: HeadingBlockProps) {
+export default function HeadingBlock({ block, onEnter, autoFocus, onDelete }: HeadingBlockProps) {
   const queryClient = useQueryClient();
   const data = block.data as unknown as HeadingBlockData;
   const [content, setContent] = useState(data.content || "");
   const [level, setLevel] = useState<1 | 2 | 3>(data.level || 1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus on mount if autoFocus is true
+  useEffect(() => {
+    if (autoFocus && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(textareaRef.current.value.length, textareaRef.current.value.length);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setContent(data.content || "");
@@ -46,6 +57,13 @@ export default function HeadingBlock({ block, onEnter }: HeadingBlockProps) {
       e.preventDefault();
       textareaRef.current?.blur();
       onEnter?.();
+      return;
+    }
+
+    if ((e.key === "Backspace" || e.key === "Delete") && content === "") {
+      e.preventDefault();
+      onDelete?.();
+      return;
     }
   };
 
