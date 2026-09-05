@@ -118,6 +118,9 @@ export default function PageView() {
         case "chart": defaultData = { chartType: "bar", title: "Grafik", data: [{ label: "Oca", "Desktop": 30, "Mobile": 12, "Tablet": 18 }, { label: "Şub", "Desktop": 45, "Mobile": 25, "Tablet": 20 }] }; break;
         case "table": defaultData = { hasRowHeader: false, hasColumnHeader: false, cells: [["", "", ""], ["", "", ""], ["", "", ""]] }; break;
         case "image": defaultData = { url: "", caption: "" }; break;
+        case "bulleted_list": defaultData = { content: "" }; break;
+        case "numbered_list": defaultData = { content: "" }; break;
+        case "divider": defaultData = {}; break;
       }
     }
 

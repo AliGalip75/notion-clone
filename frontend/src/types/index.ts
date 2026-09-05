@@ -81,7 +81,10 @@ export type BlockType =
   | "number"
   | "chart"
   | "table"
-  | "image";
+  | "image"
+  | "bulleted_list"
+  | "numbered_list"
+  | "divider";
 
 export interface Block {
   id: number;
@@ -162,3 +165,13 @@ export interface ImageBlockData {
   url: string;
   caption?: string;
 }
+
+export interface BulletedListBlockData {
+  content: string;
+}
+
+export interface NumberedListBlockData {
+  content: string;
+}
+
+export interface DividerBlockData {}

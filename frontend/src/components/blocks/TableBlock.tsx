@@ -265,6 +265,11 @@ export default function TableBlock({ block }: TableBlockProps) {
                           updateCell(rIdx, cIdx, e.target.value);
                         }
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && rIdx === localCells.length - 1) {
+                          addRow(rIdx, 'below');
+                        }
+                      }}
                       className="w-full h-full min-h-[36px] px-3 py-2 bg-transparent outline-none transition-colors"
                       style={{ color: "var(--color-text)" }}
                     />

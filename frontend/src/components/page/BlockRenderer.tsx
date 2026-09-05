@@ -12,6 +12,9 @@ import NumberBlock from "../blocks/NumberBlock";
 import ChartBlock from "../blocks/ChartBlock";
 import TableBlock from "../blocks/TableBlock";
 import ImageBlock from "../blocks/ImageBlock";
+import BulletedListBlock from "../blocks/BulletedListBlock";
+import NumberedListBlock from "../blocks/NumberedListBlock";
+import DividerBlock from "../blocks/DividerBlock";
 
 interface BlockRendererProps {
   block: Block;
@@ -52,6 +55,9 @@ export default function BlockRenderer({ block, dragHandleProps, onInsertBlockAft
       case "number": return <NumberBlock block={block} />;
       case "chart": return <ChartBlock block={block} />;
       case "table": return <TableBlock block={block} />;
+      case "bulleted_list": return <BulletedListBlock block={block} onEnter={() => onInsertBlockAfter?.("bulleted_list")} autoFocus={shouldFocus} onDelete={() => deleteBlock.mutate()} />;
+      case "numbered_list": return <NumberedListBlock block={block} onEnter={() => onInsertBlockAfter?.("numbered_list")} autoFocus={shouldFocus} onDelete={() => deleteBlock.mutate()} />;
+      case "divider": return <DividerBlock block={block} autoFocus={shouldFocus} />;
       case "image": return <ImageBlock block={block} />;
       default:
         return (

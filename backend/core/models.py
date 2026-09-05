@@ -80,6 +80,9 @@ class Block(models.Model):
         CHART = "chart", "Chart"
         TABLE = "table", "Table"
         IMAGE = "image", "Image"
+        BULLETED_LIST = "bulleted_list", "Bulleted List"
+        NUMBERED_LIST = "numbered_list", "Numbered List"
+        DIVIDER = "divider", "Divider"
 
     page = models.ForeignKey(
         Page,
