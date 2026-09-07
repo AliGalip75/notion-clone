@@ -5,8 +5,8 @@ import { CSS } from "@dnd-kit/utilities";
 interface SortableItemProps {
   id: string;
   children: (props: {
-    attributes: Record<string, any>;
-    listeners: Record<string, any>;
+    attributes: any;
+    listeners: any;
     isDragging: boolean;
   }) => React.ReactNode;
 }
