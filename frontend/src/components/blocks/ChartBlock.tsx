@@ -18,7 +18,7 @@ import {
   Area,
   Legend
 } from "recharts";
-import { Plus, Trash2, Settings2, GripHorizontal } from "lucide-react";
+import { Plus, Minus, Trash2, Settings2, GripHorizontal, ChevronUp, ChevronDown } from "lucide-react";
 import type { Block, ChartBlockData } from "@/types";
 
 interface ChartBlockProps {
@@ -298,12 +298,28 @@ export default function ChartBlock({ block }: ChartBlockProps) {
                     </td>
                     {(type === "pie" || type === "donut" ? [seriesKeys[0]] : seriesKeys).map(key => (
                       <td key={key} className="border-b border-r border-[var(--color-border)] p-0">
-                        <input
-                          type="number"
-                          value={point[key]}
-                          onChange={(e) => updateDataPoint(i, key, Number(e.target.value) || 0)}
-                          className="w-full bg-transparent px-3 py-2 outline-none text-[var(--color-text-secondary)]"
-                        />
+                        <div className="flex items-center w-full group/number relative">
+                          <input
+                            type="number"
+                            value={point[key]}
+                            onChange={(e) => updateDataPoint(i, key, Number(e.target.value) || 0)}
+                            className="w-full bg-transparent px-3 py-2 outline-none text-[var(--color-text-secondary)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pr-6"
+                          />
+                          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col opacity-0 group-hover/number:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => updateDataPoint(i, key, (Number(point[key]) || 0) + 1)}
+                              className="w-4 h-3.5 flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-text)] hover:bg-[var(--color-border)] rounded-t"
+                            >
+                              <ChevronUp size={10} />
+                            </button>
+                            <button
+                              onClick={() => updateDataPoint(i, key, (Number(point[key]) || 0) - 1)}
+                              className="w-4 h-3.5 flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-text)] hover:bg-[var(--color-border)] rounded-b"
+                            >
+                              <ChevronDown size={10} />
+                            </button>
+                          </div>
+                        </div>
                       </td>
                     ))}
                     <td className="border-b border-[var(--color-border)] text-center p-0">

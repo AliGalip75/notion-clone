@@ -219,6 +219,7 @@ function TreeItem({
   const isSelected = selectedId === node.id;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { state } = useSidebar();
 
   const [isRenaming, setIsRenaming] = useState(autoRenameId === node.id);
 
@@ -283,8 +284,8 @@ function TreeItem({
   const ActionsMenu = () => (
     <>
       <SidebarMenuAction
-        showOnHover={true}
-        className="right-7 bg-transparent hover:bg-sidebar-accent z-10"
+        showOnHover={false}
+        className="right-7 bg-transparent hover:bg-sidebar-accent z-10 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 data-[state=open]:opacity-100 transition-opacity"
         onClick={(e) => {
           e.stopPropagation();
           createSubPageMutation.mutate();
@@ -296,8 +297,8 @@ function TreeItem({
       <DropdownMenu>
         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
           <SidebarMenuAction
-            showOnHover={true}
-            className="bg-transparent hover:bg-sidebar-accent z-10"
+            showOnHover={false}
+            className="bg-transparent hover:bg-sidebar-accent z-10 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 data-[state=open]:opacity-100 transition-opacity"
           >
             <MoreHorizontal className="hover:bg-black/5 dark:hover:bg-white/5 hover:cursor-pointer" />
             <span className="sr-only">Daha fazla</span>
@@ -332,25 +333,27 @@ function TreeItem({
         onClick={(e) => e.stopPropagation()}
       />
     ) : (
-      <span className="truncate">{node.title}</span>
+      <span className="truncate flex-1 min-w-0 text-left" title={node.title}>{node.title}</span>
     )
   );
 
   if (!hasChildren) {
     return (
       <SidebarMenuItem className="relative group/item">
-        <SidebarMenuButton
-          isActive={isSelected}
-          onClick={() => onSelect(node.id)}
-          tooltip={node.title}
-          className={!isRenaming ? "group-hover/item:pr-14 transition-[padding]" : "transition-[padding]"}
-        >
-          <span>
-            {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
-          </span>
-          <TitleContent />
-        </SidebarMenuButton>
-        {!isRenaming && <ActionsMenu />}
+        <div className="relative group/row w-full flex items-center">
+          <SidebarMenuButton
+            isActive={isSelected}
+            onClick={() => onSelect(node.id)}
+            tooltip={node.title}
+            className={!isRenaming ? "group-hover/item:!pr-20 transition-[padding]" : "transition-[padding]"}
+          >
+            <span>
+              {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
+            </span>
+            <TitleContent />
+          </SidebarMenuButton>
+          {!isRenaming && <ActionsMenu />}
+        </div>
       </SidebarMenuItem>
     );
   }
@@ -358,27 +361,31 @@ function TreeItem({
   return (
     <Collapsible defaultOpen={isSelected || node.children.some(c => c.id === selectedId)} className="group/collapsible">
       <SidebarMenuItem className="relative group/item">
-        <SidebarMenuButton
-          isActive={isSelected}
-          onClick={() => onSelect(node.id)}
-          tooltip={node.title}
-          className={!isRenaming ? "group-hover/item:pr-14 transition-[padding]" : "transition-[padding]"}
-        >
-          <span className="group-hover/item:opacity-0 transition-opacity">
-            {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
-          </span>
-          <TitleContent />
-        </SidebarMenuButton>
-        <CollapsibleTrigger asChild>
-          <SidebarMenuAction
-            className="left-1 opacity-0 group-hover/item:opacity-100 transition-all data-[state=open]:rotate-90 group-data-[collapsible=icon]:hidden bg-transparent hover:bg-sidebar-accent"
-            showOnHover={false}
+        <div className="relative group/row w-full flex items-center">
+          <SidebarMenuButton
+            isActive={isSelected}
+            onClick={() => onSelect(node.id)}
+            tooltip={node.title}
+            className={!isRenaming ? "group-hover/item:!pr-20 transition-[padding]" : "transition-[padding]"}
           >
-            <ChevronRight className="hover:bg-black/5 dark:hover:bg-white/5 hover:cursor-pointer" />
-            <span className="sr-only">Aç/Kapat</span>
-          </SidebarMenuAction>
-        </CollapsibleTrigger>
-        {!isRenaming && <ActionsMenu />}
+            {state !== "collapsed" ? (
+              <CollapsibleTrigger asChild>
+                <div
+                  className="flex items-center justify-center hover:bg-sidebar-accent rounded cursor-pointer w-5 h-5 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden -ml-0.5 [&[data-state=open]>svg]:rotate-90"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ChevronRight className="size-4 shrink-0 transition-transform" />
+                </div>
+              </CollapsibleTrigger>
+            ) : (
+              <span>
+                {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
+              </span>
+            )}
+            <TitleContent />
+          </SidebarMenuButton>
+          {!isRenaming && <ActionsMenu />}
+        </div>
         <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
           <SidebarMenuSub>
             {node.children.map((child) => (
@@ -417,6 +424,7 @@ function TreeSubItem({
   const isSelected = selectedId === node.id;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { state } = useSidebar();
 
   const [isRenaming, setIsRenaming] = useState(autoRenameId === node.id);
 
@@ -482,8 +490,8 @@ function TreeSubItem({
     <>
       {depth < 3 && (
         <SidebarMenuAction
-          showOnHover={true}
-          className="right-7 bg-transparent hover:bg-sidebar-accent z-10"
+          showOnHover={false}
+          className="!top-1 right-7 bg-transparent hover:bg-sidebar-accent z-10 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 data-[state=open]:opacity-100 transition-opacity"
           onClick={(e) => {
             e.stopPropagation();
             createSubPageMutation.mutate();
@@ -496,8 +504,8 @@ function TreeSubItem({
       <DropdownMenu>
         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
           <SidebarMenuAction
-            showOnHover={true}
-            className={depth < 3 ? "bg-transparent hover:bg-sidebar-accent z-10" : "right-1 bg-transparent hover:bg-sidebar-accent z-10"}
+            showOnHover={false}
+            className={depth < 3 ? "!top-1 bg-transparent hover:bg-sidebar-accent z-10 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 data-[state=open]:opacity-100 transition-opacity" : "!top-1 right-1 bg-transparent hover:bg-sidebar-accent z-10 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 data-[state=open]:opacity-100 transition-opacity"}
           >
             <MoreHorizontal className="hover:bg-black/5 dark:hover:bg-white/5 hover:cursor-pointer" />
             <span className="sr-only">Daha fazla</span>
@@ -532,25 +540,27 @@ function TreeSubItem({
         onClick={(e) => e.stopPropagation()}
       />
     ) : (
-      <span className="truncate">{node.title}</span>
+      <span className="truncate flex-1 min-w-0 text-left select-none" title={node.title}>{node.title}</span>
     )
   );
 
   if (!hasChildren) {
     return (
       <SidebarMenuSubItem className="relative group/item">
-        <SidebarMenuSubButton
-          isActive={isSelected}
-          onClick={() => onSelect(node.id)}
-          className={!isRenaming ? "group-hover/item:pr-14 transition-[padding]" : ""}
-          title={node.title}
-        >
-          <span>
-            {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
-          </span>
-          <TitleContent />
-        </SidebarMenuSubButton>
-        {!isRenaming && <ActionsMenu />}
+        <div className="relative group/row w-full flex items-center">
+          <SidebarMenuSubButton
+            isActive={isSelected}
+            onClick={() => onSelect(node.id)}
+            className={!isRenaming ? "w-full group-hover/item:!pr-20 transition-[padding]" : "w-full"}
+            title={node.title}
+          >
+            <span>
+              {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
+            </span>
+            <TitleContent />
+          </SidebarMenuSubButton>
+          {!isRenaming && <ActionsMenu />}
+        </div>
       </SidebarMenuSubItem>
     );
   }
@@ -558,27 +568,31 @@ function TreeSubItem({
   return (
     <Collapsible defaultOpen={isSelected || node.children.some(c => c.id === selectedId)} className="group/sub-collapsible">
       <SidebarMenuSubItem className="relative group/item">
-        <SidebarMenuSubButton
-          isActive={isSelected}
-          onClick={() => onSelect(node.id)}
-          className={!isRenaming ? "group-hover/item:pr-14 transition-[padding]" : ""}
-          title={node.title}
-        >
-          <span className="group-hover/item:opacity-0 transition-opacity">
-            {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
-          </span>
-          <TitleContent />
-        </SidebarMenuSubButton>
-        <CollapsibleTrigger asChild>
-          <SidebarMenuAction
-            className="left-0 opacity-0 group-hover/item:opacity-100 transition-all data-[state=open]:rotate-90 group-data-[collapsible=icon]:hidden bg-transparent hover:bg-sidebar-accent"
-            showOnHover={false}
+        <div className="relative group/row w-full flex items-center">
+          <SidebarMenuSubButton
+            isActive={isSelected}
+            onClick={() => onSelect(node.id)}
+            className={!isRenaming ? "w-full group-hover/item:!pr-20 transition-[padding]" : "w-full"}
+            title={node.title}
           >
-            <ChevronRight className="hover:bg-black/5 dark:hover:bg-white/5 hover:cursor-pointer" />
-            <span className="sr-only">Aç/Kapat</span>
-          </SidebarMenuAction>
-        </CollapsibleTrigger>
-        {!isRenaming && <ActionsMenu />}
+            {state !== "collapsed" ? (
+              <CollapsibleTrigger asChild>
+                <div
+                  className="flex items-center justify-center hover:bg-sidebar-accent rounded cursor-pointer w-5 h-5 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden -ml-0.5 [&[data-state=open]>svg]:rotate-90"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ChevronRight className="size-4 shrink-0 transition-transform" />
+                </div>
+              </CollapsibleTrigger>
+            ) : (
+              <span>
+                {node.icon && node.icon !== "📄" ? node.icon : <FileText className="size-4 shrink-0" />}
+              </span>
+            )}
+            <TitleContent />
+          </SidebarMenuSubButton>
+          {!isRenaming && <ActionsMenu />}
+        </div>
         <CollapsibleContent>
           <SidebarMenuSub>
             {node.children.map((child) => (
